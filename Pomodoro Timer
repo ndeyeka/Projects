@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+            margin: 0;
+        }
+
+        .pomodoro-container {
+            text-align: center;
+            background-color: #e0efff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .timer {
+            font-size: 60px;
+            color: #3b8bff;
+            margin-bottom: 20px;
+        }
+
+        .start-button {
+            font-size: 20px;
+            padding: 10px 20px;
+            background-color: #3b8bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .start-button:hover {
+            background-color: #357ae8;
+        }
+
+        .details {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div class="pomodoro-container">
+    <div class="timer" id="timer">25:00</div>
+    <button class="start-button" id="startButton">START</button>
+    <div class="details">
+        <p><strong>Sessions:</strong> Session 1: 25:00 Minutes</p>
+        <p><strong>Projects:</strong> Project 1: Finish Homework</p>
+    </div>
+</div>
+
+<script>
+    let timeLeft = 25 * 60; // 25 minutes in seconds
+    let timerInterval;
+    const timerElement = document.getElementById('timer');
+    const startButton = document.getElementById('startButton');
+
+    // Function to start the timer
+    function startTimer() {
+        if (timerInterval) return; // Prevent multiple intervals
+        timerInterval = setInterval(() => {
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                timerElement.innerHTML = '00:00';
+                return;
+            }
+            timeLeft--;
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerElement.innerHTML = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }, 1000);
+    }
+
+    startButton.addEventListener('click', startTimer);
+</script>
+
+</body>
+</html>
