@@ -1,0 +1,228 @@
+npm init -y
+npm install express mongoose body-parser cors
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+
+const app = express();
+
+// Middleware
+app.use(bodyParser.json());
+app.use(cors());
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/todoDB', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => console.log("Connected to MongoDB"))
+  .catch(err => console.log(err));
+
+// Define Mongoose schema
+const todoSchema = new mongoose.Schema({
+    task: String,
+    completed: { type: Boolean, default: false }
+});
+
+// Model
+const Todo = mongoose.model('Todo', todoSchema);
+
+// Routes
+// Get all tasks
+app.get('/todos', async (req, res) => {
+    const todos = await Todo.find();
+    res.json(todos);
+});
+
+// Add a new task
+app.post('/todos', async (req, res) => {
+    const newTodo = new Todo({
+        task: req.body.task
+    });
+    await newTodo.save();
+    res.json(newTodo);
+});
+
+// Update task (mark as completed)
+app.put('/todos/:id', async (req, res) => {
+    const updatedTodo = await Todo.findByIdAndUpdate(req.params.id, { completed: true }, { new: true });
+    res.json(updatedTodo);
+});
+
+// Delete task
+app.delete('/todos/:id', async (req, res) => {
+    await Todo.findByIdAndDelete(req.params.id);
+    res.json({ message: "Task deleted" });
+});
+
+// Start server
+const PORT = 5000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="todo-container">
+        <h1>To-Do List</h1>
+        <form id="todo-form">
+            <input type="text" id="task-input" placeholder="Add a new task" required />
+            <button type="submit">Add Task</button>
+        </form>
+        <ul id="todo-list"></ul>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/todos';
+
+        // Fetch tasks from the API
+        async function fetchTodos() {
+            const response = await fetch(API_URL);
+            const todos = await response.json();
+            displayTodos(todos);
+        }
+
+        // Display tasks on the page
+        function displayTodos(todos) {
+            const todoList = document.getElementById('todo-list');
+            todoList.innerHTML = '';
+            todos.forEach(todo => {
+                const todoItem = document.createElement('li');
+                todoItem.textContent = todo.task;
+                if (todo.completed) {
+                    todoItem.classList.add('completed');
+                } else {
+                    const completeButton = document.createElement('button');
+                    completeButton.textContent = 'Complete';
+                    completeButton.onclick = async () => {
+                        await markAsCompleted(todo._id);
+                    };
+                    todoItem.appendChild(completeButton);
+                }
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.onclick = async () => {
+                    await deleteTodo(todo._id);
+                };
+                todoItem.appendChild(deleteButton);
+
+                todoList.appendChild(todoItem);
+            });
+        }
+
+        // Add a new task
+        const form = document.getElementById('todo-form');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const taskInput = document.getElementById('task-input');
+            const newTask = { task: taskInput.value };
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(newTask),
+            });
+            const todo = await response.json();
+            fetchTodos(); // Refresh the task list
+            taskInput.value = ''; // Clear input field
+        });
+
+        // Mark task as completed
+        async function markAsCompleted(id) {
+            await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+            });
+            fetchTodos();
+        }
+
+        // Delete task
+        async function deleteTodo(id) {
+            await fetch(`${API_URL}/${id}`, {
+                method: 'DELETE',
+            });
+            fetchTodos();
+        }
+
+        // Initialize tasks on page load
+        fetchTodos();
+    </script>
+</body>
+</html>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.todo-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 300px;
+}
+
+h1 {
+    color: #333;
+}
+
+form {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+input[type="text"] {
+    padding: 10px;
+    flex: 1;
+    margin-right: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+button {
+    padding: 10px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    background-color: #f9f9f9;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+li.completed {
+    text-decoration: line-through;
+    color: #888;
+}
+node server.js
